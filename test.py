@@ -31,7 +31,7 @@ neg_val=diff[diff<1*np.e-6]
 ref_ds=gdal.Open(r"C:\Users\supri\OneDrive\Desktop\RS Internship\sample_data\full_pol\dop_act.bin",gdal.GA_ReadOnly)
 print(f"Number of positive pixels: {len(pos_val)}")
 print(f"Number of negative pixels: {len(neg_val)}")
-path=r"C:\Users\supri\OneDrive\Desktop\RS Internship\sample_data\full_pol\diff1.bin"
+path=r"C:\Users\supri\OneDrive\Desktop\RS Internship\sample_data\full_pol\diff_dop.bin"
 write_polsar_bin(diff,path,ref_ds)
 ref_ds=None
 data=None

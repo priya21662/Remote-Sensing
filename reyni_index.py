@@ -1,19 +1,19 @@
-from osgeo import gdal
 import numpy as np
+from osgeo import gdal
 import os
-from pathlib import Path
-def read_bin(file_path):
-    data=gdal.Open(file_path,gdal.GA_ReadOnly)
+def read_bin(folder):
+    data=gdal.Open(folder,gdal.GA_ReadOnly)
     band=data.GetRasterBand(1)
     arr=band.ReadAsArray()
     data=None
     return arr
-def write_polsar_bin(data, output_path,t3_folder):
+
+def write_bin(data,output,t3_folder):
     rows, cols = data.shape
     driver = gdal.GetDriverByName("ENVI")
     ref_path = os.path.join(t3_folder, "T11.bin")
     reference_ds = gdal.Open(ref_path)
-    out_ds = driver.Create(output_path, cols, rows, 1, gdal.GDT_Float32)
+    out_ds = driver.Create(output, cols, rows, 1, gdal.GDT_Float32)
     out_ds.SetGeoTransform(reference_ds.GetGeoTransform())
     out_ds.SetProjection(reference_ds.GetProjection())
     band = out_ds.GetRasterBand(1)
@@ -21,12 +21,12 @@ def write_polsar_bin(data, output_path,t3_folder):
     band.FlushCache()
     out_ds = None
     reference_ds=None
-    print(f"Successfully saved: {output_path}")
+    print(f"Successfully saved: {output}")
 
 def chunks(folder_path):
     eps=1e-10
+   
     # 1. Try to find dimensions 
-    
     t11_path = os.path.join(folder_path, 'T11.bin')
     t11=read_bin(t11_path)
     rows,cols=(t11).shape
@@ -59,47 +59,18 @@ def chunks(folder_path):
 
     return t3
 
-def simpson(T3):
-    
-    eigvals=np.linalg.eigvalsh(T3)
-    eigvals=np.sort(eigvals, axis=-1)[:, :, ::-1]
-    total_sum=np.sum(eigvals,axis=-1,keepdims=True)
-    p=eigvals/(total_sum)
-    simpson_h=-np.sum(p*p,axis=-1)
-    return simpson_h
-
-def simpson_inv(T3):
+def reyni2(T3):
     eps=1e-10
-    eigvals=np.linalg.eigvalsh(T3)
+    eigvals=np.linalg.eigvalsh(T3) 
+    eigvals= np.maximum(eigvals,eps)
     eigvals=np.sort(eigvals, axis=-1)[:, :, ::-1]
-    total_sum=np.sum(eigvals,axis=-1,keepdims=True)
-    p=eigvals/(total_sum)
-    simpson_h=np.sum(p*p,axis=-1)
-    simpson_inverse=1/(simpson_h+eps)
-    return simpson_inverse
-
-def gini(T3):
-    
-    eigvals=np.linalg.eigvalsh(T3)
-    eigvals=np.sort(eigvals, axis=-1)[:, :, ::-1]
-    total_sum=np.sum(eigvals,axis=-1,keepdims=True)
-    p=eigvals/(total_sum)
-    gini_index=1-np.sum(p*p,axis=-1)
-    return gini_index
-
-    
+    span=np.sum(eigvals,axis=-1,keepdims=True)
+    p=eigvals/(eps+span)
+    reyni_index_2=(-1* np.log (np.sum(p**2,axis=-1)))/np.log (3)
+    return reyni_index_2
 
 folder=r"C:\Users\supri\OneDrive\Desktop\RS Internship\sample_data\full_pol\T3"
 T3=chunks(folder)
-simpson_inverse=simpson_inv(T3)
-output=r"C:\Users\supri\OneDrive\Desktop\RS Internship\calc_data\inv_simpson.bin"
-write_polsar_bin(simpson_inverse,output,folder)
-simpson_inv_act=read_bin(r"C:\Users\supri\OneDrive\Desktop\RS Internship\sample_data\full_pol\T3\inverse_simpson_index.bin")
-diff =simpson_inv_act-simpson_inverse
-path=r"C:\Users\supri\OneDrive\Desktop\RS Internship\calc_data\inv_simpson_diff.bin"
-write_polsar_bin(diff,path,folder)
-
-#Gini Index
-gini_index=gini(T3)
-output1=r"C:\Users\supri\OneDrive\Desktop\RS Internship\calc_data\gini.bin"
-write_polsar_bin(gini_index,output1,folder)
+reyni_index2=reyni2(T3)
+output=r"C:\Users\supri\OneDrive\Desktop\RS Internship\calc_data\reyni2.bin"
+write_bin(reyni_index2,output,folder)
