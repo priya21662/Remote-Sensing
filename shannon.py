@@ -89,6 +89,11 @@ def shannon(t3):
     
     return shannon_h
 
+def perplex(shannon_index):
+    return np.exp(shannon_index*np.log(3))
+
+
+
 folder=r"C:\Users\supri\OneDrive\Desktop\RS Internship\sample_data\full_pol\T3"
 T3=chunks(folder)
 shannon_index=shannon(T3)
@@ -98,3 +103,7 @@ shannon_act=read_bin(r"C:\Users\supri\OneDrive\Desktop\RS Internship\sample_data
 diff=shannon_act-shannon_index
 path=r"C:\Users\supri\OneDrive\Desktop\RS Internship\calc_data\diff_shannon.bin"
 write_polsar_bin(diff,path,folder)
+
+output1=r"C:\Users\supri\OneDrive\Desktop\RS Internship\calc_data\perplex.bin"
+perplex_index=perplex(shannon_index)
+write_polsar_bin(perplex_index,output1,folder)
