@@ -59,18 +59,28 @@ def chunks(folder_path):
 
     return t3
 
-def reyni2(T3):
+def reyni(T3,alpha):
     eps=1e-10
     eigvals=np.linalg.eigvalsh(T3) 
     eigvals= np.maximum(eigvals,eps)
-    eigvals=np.sort(eigvals, axis=-1)[:, :, ::-1]
+    #eigvals=np.sort(eigvals, axis=-1)[:, :, ::-1]
     span=np.sum(eigvals,axis=-1,keepdims=True)
     p=eigvals/(eps+span)
-    reyni_index_2=(-1* np.log (np.sum(p**2,axis=-1)))/np.log (3)
-    return reyni_index_2
+
+    # Handle the alpha = 1 limit (Shannon Entropy)
+    
+    if np.isclose(alpha, 1.0):
+        reyni_index = -np.sum(p * np.log(p), axis=-1) / np.log(3)
+    else:
+        
+        reyni_index = np.log(np.sum(p**alpha, axis=-1)) / (np.log(3) * (1 - alpha))
+    return reyni_index
 
 folder=r"C:\Users\supri\OneDrive\Desktop\RS Internship\sample_data\full_pol\T3"
 T3=chunks(folder)
-reyni_index2=reyni2(T3)
-output=r"C:\Users\supri\OneDrive\Desktop\RS Internship\calc_data\reyni2.bin"
-write_bin(reyni_index2,output,folder)
+reyni_index3=reyni(T3,3)
+reyni_index4=reyni(T3,4)
+output1=r"C:\Users\supri\OneDrive\Desktop\RS Internship\calc_data\reyni3.bin"
+output2=r"C:\Users\supri\OneDrive\Desktop\RS Internship\calc_data\reyni4.bin"
+write_bin(reyni_index3,output1,folder)
+write_bin(reyni_index4,output2,folder)
